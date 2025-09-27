@@ -92,6 +92,30 @@ def get_geolocation(ip_address):
     return None, None
 
 
+# ------------------- Safe Parameter Fetch -------------------
+
+
+def get_request_param(request, key):
+    """Safely fetch a parameter from GET or POST and return it as a string or None.
+
+    Args:
+        request: Django HttpRequest object
+        key (str): Parameter name
+
+    Returns:
+        str or None
+
+    """
+    value = request.GET.get(key) or request.POST.get(key) or None
+
+    if isinstance(value, bytes | bytearray):
+        value = value.decode("utf-8", errors="ignore")
+    elif value is not None and not isinstance(value, str):
+        value = str(value)
+
+    return value
+
+
 # ------------------- Click Log -------------------
 
 
@@ -108,7 +132,12 @@ def create_click_log(target, request):
     if is_routable:
         country, city = get_geolocation(ip)
 
-    ref = request.GET.get('ref') or request.POST.get('ref')
+    ref = get_request_param(request, "ref")
     ClickLog.objects.create(
-        target=target, ip_address=ip, user_agent=user_agent, country=country, city=city, ref=ref
+        target=target,
+        ip_address=ip,
+        user_agent=user_agent,
+        country=country,
+        city=city,
+        ref=ref,
     )

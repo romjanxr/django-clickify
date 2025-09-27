@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "django-clickify"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Django app to track link clicks with rate limiting, IP filtering, and geolocation."
-authors = ["Romjan Ali <romjanvr5@gmail.com>"]
+authors = ["Md Romjan Ali <romjanvr5@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/romjanxr/django-clickify"
