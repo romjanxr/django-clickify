@@ -151,6 +151,16 @@ First, create a `TrackedLink` in your Django Admin under the "Clickify" section.
 
 Once a `TrackedLink` is created, you can use it in one of two ways.
 
+### Reference Parameter for Context Tracking
+
+You can pass an optional `ref` parameter to add context to your click tracking:
+```plaintext
+track/<slug>/?ref=homepage-banner
+track/<slug>/?ref=email-campaign
+track/<slug>/?ref=footer-link
+```
+This parameter is saved in the click log and can be used for analytics to understand where your links are being clicked from.
+
 ### Option 1: Template-Based Usage
 
 This is the standard way to use the app in traditional Django projects.
@@ -301,6 +311,95 @@ fetch("/api/track/monthly-report-pdf/", {
         # Fall back to the default DRF handler
         return exception_handler(exc, context)
     ```
+
+### Option 3: Dynamic URL Targeting with JavaScript
+
+For advanced use cases where you want to determine the target URL dynamically on the frontend, you can create `TrackedLink` entries without a target URL and handle the redirection in JavaScript.
+
+#### Step 1: Create TrackedLink without Target URL
+
+In the Django Admin, create a `TrackedLink` with:
+- **Name:** `Dynamic Product Link`
+- **Slug:** `product-link`
+- **Target Url:** (leave empty)
+
+#### Step 2: Handle Tracking and Redirection in JavaScript
+```javascript
+async function trackAndRedirect(slug, targetUrl, context = '') {
+    try {
+        // Build the API URL with ref parameter
+        const apiUrl = `/api/track/${slug}/`;
+        const params = context ? `?ref=${encodeURIComponent(context)}` : '';
+
+        // Track the click
+        const response = await fetch(apiUrl + params, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(), // Your CSRF token function
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (response.ok) {
+            // Redirect to your dynamic target
+            window.location.href = targetUrl;
+        } else {
+            console.error('Tracking failed:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error tracking click:', error);
+        // Still redirect even if tracking fails
+        window.location.href = targetUrl;
+    }
+}
+
+// Usage examples
+document.querySelector('#premium-signup').addEventListener('click', (e) => {
+    e.preventDefault();
+    const userType = getUserType(); // Your function to determine user type
+    const targetUrl = userType === 'premium' ? '/premium-signup/' : '/basic-signup/';
+    trackAndRedirect('product-link', targetUrl, `${userType}-user-header`);
+});
+
+document.querySelector('#footer-signup').addEventListener('click', (e) => {
+    e.preventDefault();
+    trackAndRedirect('product-link', '/signup/', 'footer-cta');
+});
+```
+#### Step 3: Template Usage with Dynamic Targets
+You can also use this approach with the template-based method by handling the redirect with JavaScript:
+
+```html
+{% load clickify_tags %}
+
+<a href="{% track_url 'product-link' %}?ref=hero-banner"
+   onclick="handleDynamicRedirect(event, 'product-link', '/current-promotion/', 'hero-banner')">
+    Sign Up Now
+</a>
+
+<script>
+function handleDynamicRedirect(event, slug, targetUrl, ref) {
+    event.preventDefault();
+
+    // Make tracking request
+    fetch(`/track/${slug}/?ref=${ref}`)
+        .then(() => {
+            // Redirect to dynamic target
+            window.location.href = targetUrl;
+        })
+        .catch(() => {
+            // Fallback redirect
+            window.location.href = targetUrl;
+        });
+}
+</script>
+```
+
+#### This approach is useful for:
+- **A/B testing:** Same tracking slug, different destinations based on user segment
+- **Personalization:** Dynamic URLs based on user preferences or behavior
+- **Campaign tracking:** Detailed context about where and how links are clicked
+- **Single-page applications:** Full control over navigation flow
 
 ## How It Works
 

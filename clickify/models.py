@@ -22,7 +22,8 @@ class TrackedLink(models.Model):
     )
     target_url = models.URLField(
         max_length=2048,
-        help_text="The actual URL to the destination (e.g., on S3, a blog post, an affiliate link, etc.)",
+        help_text="The actual URL to the destination (e.g., on S3, a blog post, an affiliate link, etc.) - Not mandatory",
+        blank=True, null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -42,6 +43,7 @@ class ClickLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
+    ref = models.TextField(default="",blank=True, null=True)
 
     def __str__(self):
         return f"Click on {self.target.name} at {self.timestamp}"
