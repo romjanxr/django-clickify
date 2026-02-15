@@ -1,0 +1,85 @@
+name: Compatibility Matrix
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: ruff
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Ruff
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff
+
+      - name: Run Ruff check
+        run: python -m ruff check .
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.10"
+            django-version: "4.2.*"
+            ratelimit-mode: "with-ratelimit"
+          - python-version: "3.10"
+            django-version: "4.2.*"
+            ratelimit-mode: "without-ratelimit"
+          - python-version: "3.11"
+            django-version: "5.0.*"
+            ratelimit-mode: "with-ratelimit"
+          - python-version: "3.11"
+            django-version: "5.0.*"
+            ratelimit-mode: "without-ratelimit"
+          - python-version: "3.12"
+            django-version: "5.1.*"
+            ratelimit-mode: "with-ratelimit"
+          - python-version: "3.12"
+            django-version: "5.1.*"
+            ratelimit-mode: "without-ratelimit"
+          - python-version: "3.13"
+            django-version: "6.0.*"
+            ratelimit-mode: "with-ratelimit"
+          - python-version: "3.13"
+            django-version: "6.0.*"
+            ratelimit-mode: "without-ratelimit"
+
+    name: py${{ matrix.python-version }} / django${{ matrix.django-version }} / ${{ matrix.ratelimit-mode }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "Django==${{ matrix.django-version }}" djangorestframework
+
+      - name: Install optional ratelimit dependency
+        if: matrix.ratelimit-mode == 'with-ratelimit'
+        run: python -m pip install django-ratelimit
+
+      - name: Run tests
+        run: python -m django test tests --settings=tests.settings -v 2

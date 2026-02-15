@@ -5,6 +5,10 @@
 
 A simple Django app to track clicks on any link (e.g., affiliate links, outbound links, file downloads) with rate limiting, IP filtering, and geolocation.
 
+Supported versions:
+- Python `3.10+`
+- Django `4.2` to `6.x`
+
 ## Features
 
 - **Click Tracking**: Logs every click on a tracked link, including IP address, user agent, and timestamp.
@@ -165,6 +169,8 @@ This parameter is saved in the click log and can be used for analytics to unders
 
 This is the standard way to use the app in traditional Django projects.
 
+`clickify` accepts both `/track/<slug>/` and `/track/<slug>`, but generated URLs use the trailing-slash form.
+
 #### Step 1: Include Clickify URLs
 
 In your project's `urls.py`, include the `clickify` URL patterns. You can choose any path you like for the tracking URLs.
@@ -287,7 +293,7 @@ fetch("/api/track/monthly-report-pdf/", {
     ```python
     # settings.py
     REST_FRAMEWORK = {
-        'EXCEPTION_HANDLER': 'clickify.drf_exception_handler.custom_exception_handler'
+        'EXCEPTION_HANDLER': 'clickify.drf_exceptions.custom_exception_handler'
     }
     ```
 
@@ -297,7 +303,7 @@ fetch("/api/track/monthly-report-pdf/", {
     ```python
     # your_project/your_app/exception_handler.py
     from rest_framework.views import exception_handler
-    from clickify.drf_exception_handler import handle_clickify_exceptions # <-- Import
+    from clickify.drf_exceptions import handle_clickify_exceptions # <-- Import
 
     def your_custom_handler(exc, context):
         # First, check for clickify-specific exceptions
