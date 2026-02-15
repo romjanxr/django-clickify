@@ -81,3 +81,9 @@ class TrackClickAPIViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_track_click_api_works_without_trailing_slash(
+        self, mock_get_geolocation, mock_get_client_ip
+    ):
+        response = self.client.post(f"/api/track/{self.target.slug}")
+        self.assertEqual(response.status_code, 200)

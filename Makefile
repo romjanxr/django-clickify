@@ -1,45 +1,37 @@
-# ==============================================================================
-# Makefile for django-clickify
-#
-# Usage:
-#   make help       Show this help message.
-#   make install    Install dependencies.
-#   make format     Format code and auto-fix linting errors.
-#   make check      Check for linting and formatting errors.
-#   make test       Run the test suite.
-#   make precommit  Install pre-commit hooks.
-# ==============================================================================
-
 .DEFAULT_GOAL := help
 .PHONY: help install format check test precommit
 
-# Help command
+POETRY_RUN := poetry run
+TEST_ARGS := -m django test tests --settings=tests.settings -v 2
+
 help: ## Show this help message.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Install dependencies with Poetry
 install: ## Install project dependencies
 	@poetry install
 
-# Format code and auto-fix linting issues
 format: ## Format code and fix linting
-	@echo "Formatting code..."
-	@poetry run ruff check . --fix
+	@$(POETRY_RUN) ruff check . --fix
 
-# Check for linting/formatting issues without fixing
 check: ## Check code formatting and linting
-	@echo "Checking code style..."
-	@poetry run ruff check .
+	@$(POETRY_RUN) ruff check .
 
-# Run tests using pytest
 test: ## Run the test suite
 	@echo "Running tests..."
-	@poetry run pytest
+	@if command -v poetry >/dev/null 2>&1 && $(POETRY_RUN) python -c "import sys" >/dev/null 2>&1; then \
+		echo "Using Poetry environment"; \
+		$(POETRY_RUN) python $(TEST_ARGS); \
+	elif [ -x .venv/bin/python ] && .venv/bin/python -c "import sys" >/dev/null 2>&1; then \
+		echo "Using project .venv"; \
+		.venv/bin/python $(TEST_ARGS); \
+	elif command -v python3 >/dev/null 2>&1; then \
+		echo "Using system python3"; \
+		python3 $(TEST_ARGS); \
+	else \
+		echo "No working test runner found. Install dependencies with: poetry install"; \
+		exit 1; \
+	fi
 
-# Install pre-commit hooks
 precommit: ## Install pre-commit hooks
-	@echo "Installing pre-commit if not already installed..."
 	@poetry add --group dev pre-commit || true
-	@echo "Installing Git hooks..."
-	@poetry run pre-commit install
-	@echo "Pre-commit hooks installed!"
+	@$(POETRY_RUN) pre-commit install
